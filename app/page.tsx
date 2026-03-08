@@ -11,7 +11,8 @@ import {
   Zap,
   BarChart3,
   ArrowRight,
-  Menu
+  Menu,
+  Check
 } from "lucide-react";
 
 export default function Home() {
@@ -241,6 +242,137 @@ export default function Home() {
                   <p className="text-sm text-blue-200 text-left">Detected copy-paste code, voice mismatch, inconsistent history.</p>
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing Section */}
+        <section id="pricing" className="py-24 bg-muted/30">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16">
+              <h2 className="text-3xl font-bold tracking-tight mb-4">Simple, transparent pricing</h2>
+              <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+                Choose the perfect plan for your team size. Start validating candidates instantly.
+              </p>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+              {/* Starter Tier */}
+              <Card className="border shadow-sm flex flex-col pt-6">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Starter</CardTitle>
+                  <CardDescription>For small teams scaling up.</CardDescription>
+                  <div className="mt-4 flex items-baseline text-5xl font-extrabold">
+                    $99
+                    <span className="ml-1 text-xl font-medium text-muted-foreground">/mo</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <ul className="space-y-4 text-sm text-muted-foreground mt-4">
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-primary" />
+                      5 Active Jobs
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-primary" />
+                      Up to 50 Candidates/mo
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-primary" />
+                      Basic Truthfulness Scoring
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-primary" />
+                      Standard Email Support
+                    </li>
+                  </ul>
+                </CardContent>
+                <div className="p-6 pt-0 mt-auto">
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/auth/signup">Get Started</Link>
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Pro Tier (Highlighted) */}
+              <Card className="border-primary shadow-xl flex flex-col relative scale-105 z-10">
+                <div className="absolute top-0 inset-x-0 -mt-3 flex justify-center">
+                  <Badge variant="default" className="px-3 py-1 bg-accent text-accent-foreground hover:bg-accent/90">Most Popular</Badge>
+                </div>
+                <CardHeader className="pt-8">
+                  <CardTitle className="text-2xl text-primary">Pro</CardTitle>
+                  <CardDescription>For growing businesses.</CardDescription>
+                  <div className="mt-4 flex items-baseline text-5xl font-extrabold">
+                    $299
+                    <span className="ml-1 text-xl font-medium text-muted-foreground">/mo</span>
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <ul className="space-y-4 text-sm text-foreground mt-4">
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-accent" />
+                      Unlimited Active Jobs
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-accent" />
+                      Up to 500 Candidates/mo
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-accent" />
+                      Advanced Truthfulness Scoring
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-accent" />
+                      AI Voice Analysis Logging
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-accent" />
+                      Priority Support
+                    </li>
+                  </ul>
+                </CardContent>
+                <div className="p-6 pt-0 mt-auto">
+                  <Button variant="accent" className="w-full text-md h-12" asChild>
+                    <Link href="/auth/signup">Start Free Trial</Link>
+                  </Button>
+                </div>
+              </Card>
+
+              {/* Enterprise Tier */}
+              <Card className="border shadow-sm flex flex-col pt-6">
+                <CardHeader>
+                  <CardTitle className="text-2xl">Enterprise</CardTitle>
+                  <CardDescription>Custom volume pricing.</CardDescription>
+                  <div className="mt-4 flex items-baseline text-5xl font-extrabold">
+                    Custom
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1">
+                  <ul className="space-y-4 text-sm text-muted-foreground mt-4">
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-primary" />
+                      Unlimited Everything
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-primary" />
+                      Custom API Integrations
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-primary" />
+                      Dedicated Success Manager
+                    </li>
+                    <li className="flex items-center gap-3">
+                      <Check className="w-4 h-4 text-primary" />
+                      SLA Guarantees
+                    </li>
+                  </ul>
+                </CardContent>
+                <div className="p-6 pt-0 mt-auto">
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link href="/auth/signup">Contact Sales</Link>
+                  </Button>
+                </div>
+              </Card>
             </div>
           </div>
         </section>
