@@ -22,6 +22,13 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Search,
   Filter,
   MoreHorizontal,
@@ -40,6 +47,14 @@ const CANDIDATES = [
 ];
 
 export default function CandidatesPage() {
+  const [selectedJob, setSelectedJob] = useState<string>("all");
+
+  const uniqueJobs = Array.from(new Set(CANDIDATES.map((c) => c.role)));
+
+  const filteredAndSortedCandidates = CANDIDATES
+    .filter((c) => (selectedJob === "all" ? true : c.role === selectedJob))
+    .sort((a, b) => b.score - a.score);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -48,10 +63,6 @@ export default function CandidatesPage() {
           <p className="text-muted-foreground">
             View and manage candidate applications.
           </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline">Export CSV</Button>
-          <Button variant="accent">Invite Candidate</Button>
         </div>
       </div>
 
@@ -65,6 +76,19 @@ export default function CandidatesPage() {
             className="pl-8 w-full"
           />
         </div>
+        <Select value={selectedJob} onValueChange={setSelectedJob}>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="All Jobs" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Jobs</SelectItem>
+            {uniqueJobs.map((job) => (
+              <SelectItem key={job} value={job}>
+                {job}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Button variant="outline" className="gap-2">
           <Filter className="w-4 h-4" />
           Status
@@ -85,7 +109,7 @@ export default function CandidatesPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {CANDIDATES.map((candidate) => (
+            {filteredAndSortedCandidates.map((candidate) => (
               <CandidateRow key={candidate.id} candidate={candidate} />
             ))}
           </TableBody>

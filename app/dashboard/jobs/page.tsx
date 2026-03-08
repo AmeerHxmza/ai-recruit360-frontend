@@ -29,7 +29,11 @@ import {
   MoreVertical,
   Users,
   Github,
-  AlertTriangle
+  AlertTriangle,
+  Share2,
+  Twitter,
+  Linkedin,
+  Copy
 } from "lucide-react";
 
 export default function JobsPage() {
@@ -99,9 +103,12 @@ export default function JobsPage() {
                   <CardTitle className="text-lg">{job.title}</CardTitle>
                   <CardDescription>{job.department}</CardDescription>
                 </div>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="w-4 h-4" />
-                </Button>
+                <div className="flex items-center gap-1">
+                  <ShareJobDialog jobTitle={job.title} jobId={job.id} />
+                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                    <MoreVertical className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="pb-2">
@@ -189,4 +196,68 @@ function CreateJobDialog() {
       </DialogContent>
     </Dialog>
   )
+}
+
+function ShareJobDialog({ jobTitle, jobId }: { jobTitle: string, jobId: number }) {
+  const jobLink = `https://ai-recruit360.com/jobs/${jobId}`;
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(jobLink);
+    // Ideally add a toast notification here
+  };
+
+  const shareOnTwitter = () => {
+    window.open(`https://twitter.com/intent/tweet?text=We are hiring for a ${encodeURIComponent(jobTitle)}! Apply here:&url=${encodeURIComponent(jobLink)}`, '_blank');
+  };
+
+  const shareOnLinkedIn = () => {
+    window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(jobLink)}`, '_blank');
+  };
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-900/20" title="Share Job">
+          <Share2 className="w-4 h-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Share Job Listing</DialogTitle>
+          <DialogDescription>
+            Share this link to attract more candidates for the {jobTitle} position.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="flex items-center space-x-2 mt-4">
+          <div className="grid flex-1 gap-2">
+            <Label htmlFor="link" className="sr-only">
+              Link
+            </Label>
+            <Input
+              id="link"
+              defaultValue={jobLink}
+              readOnly
+            />
+          </div>
+          <Button type="button" size="sm" className="px-3" onClick={copyToClipboard} variant="secondary">
+            <span className="sr-only">Copy</span>
+            <Copy className="h-4 w-4" />
+          </Button>
+        </div>
+        <DialogFooter className="sm:justify-start mt-6 flex-col gap-2">
+          <span className="text-xs text-muted-foreground mb-2">Or share directly to:</span>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" className="flex-1 gap-2 border-blue-200 hover:bg-blue-50 dark:border-blue-900 dark:hover:bg-blue-900/20" onClick={shareOnLinkedIn}>
+              <Linkedin className="h-4 w-4 text-[#0A66C2]" />
+              LinkedIn
+            </Button>
+            <Button type="button" variant="outline" className="flex-1 gap-2 border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800" onClick={shareOnTwitter}>
+              <Twitter className="h-4 w-4 text-black dark:text-white fill-current" />
+              X (Twitter)
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

@@ -19,7 +19,6 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
-  const [role, setRole] = useState<"recruiter" | "candidate">("recruiter");
   const router = useRouter();
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -43,25 +42,10 @@ export default function LoginPage() {
           Welcome back
         </CardTitle>
         <CardDescription>
-          Enter your email to sign in to your {role} account
+          Enter your company email to sign in to your account
         </CardDescription>
       </CardHeader>
       <CardContent className="px-0">
-        {/* Role Toggle */}
-        <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg mb-6">
-          <button
-            onClick={() => setRole("recruiter")}
-            className={`text-sm font-medium py-2 rounded-md transition-all ${role === "recruiter" ? "bg-white shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            Recruiter
-          </button>
-          <button
-            onClick={() => setRole("candidate")}
-            className={`text-sm font-medium py-2 rounded-md transition-all ${role === "candidate" ? "bg-white shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            Candidate
-          </button>
-        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -70,9 +54,9 @@ export default function LoginPage() {
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Company Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" {...field} />
+                    <Input placeholder="name@company.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -92,7 +76,7 @@ export default function LoginPage() {
               )}
             />
             <Button type="submit" className="w-full" variant="accent">
-              Sign In as {role === "recruiter" ? "Recruiter" : "Candidate"}
+              Sign In
             </Button>
           </form>
         </Form>

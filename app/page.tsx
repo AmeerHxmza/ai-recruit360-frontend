@@ -47,9 +47,6 @@ export default function Home() {
         <section className="relative pt-20 pb-32 overflow-hidden bg-gradient-to-b from-blue-50/50 to-white dark:from-blue-950/20 dark:to-background">
           <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
             <div className="max-w-2xl">
-              <Badge variant="outline" className="mb-4 px-3 py-1 text-primary border-primary/20 bg-primary/5">
-                New v2.0 Release
-              </Badge>
               <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-foreground mb-6 leading-tight">
                 Hire with <span className="text-primary">Confidence</span>.<br />
                 Verify with <span className="text-accent">AI</span>.
@@ -58,12 +55,16 @@ export default function Home() {
                 The world's first autonomous recruitment platform that validates candidate truthfulness in real-time using advanced voice analysis and code verification.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" variant="accent" className="h-12 px-8 text-lg shadow-xl shadow-orange-500/20">
-                  Start Hiring Now
-                  <ArrowRight className="ml-2 w-5 h-5" />
+                <Button size="lg" variant="accent" className="h-12 px-8 text-lg shadow-xl shadow-orange-500/20" asChild>
+                  <Link href="/auth/signup">
+                    Start Hiring Now
+                    <ArrowRight className="ml-2 w-5 h-5" />
+                  </Link>
                 </Button>
-                <Button size="lg" variant="outline" className="h-12 px-8 text-lg">
-                  Book Demo
+                <Button size="lg" variant="outline" className="h-12 px-8 text-lg" asChild>
+                  <Link href="#demo">
+                    Book Demo
+                  </Link>
                 </Button>
               </div>
               <div className="mt-8 flex items-center gap-4 text-sm text-muted-foreground">
@@ -251,8 +252,10 @@ export default function Home() {
             <p className="text-muted-foreground text-xl mb-8 max-w-2xl mx-auto">
               Join 5,000+ recruiters using AI-Recruit360 to save time and hire better talent.
             </p>
-            <Button size="lg" variant="accent" className="h-14 px-10 text-lg rounded-full">
-              Start Your Free Trial
+            <Button size="lg" variant="accent" className="h-14 px-10 text-lg rounded-full" asChild>
+              <Link href="/auth/signup">
+                Start Your Free Trial
+              </Link>
             </Button>
           </div>
         </section>

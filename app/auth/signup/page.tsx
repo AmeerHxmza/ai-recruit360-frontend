@@ -11,20 +11,26 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 
+const freeEmailProviders = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "aol.com", "icloud.com"];
+
 const signupSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  email: z.string().email({ message: "Invalid email address" }),
+  companyName: z.string().min(2, { message: "Company Name must be at least 2 characters" }),
+  email: z.string().email({ message: "Invalid email address" }).refine((email) => {
+    const domain = email.split("@")[1];
+    return !freeEmailProviders.includes(domain);
+  }, { message: "Please use a company email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
 export default function SignupPage() {
-  const [role, setRole] = useState<"recruiter" | "candidate">("recruiter");
   const router = useRouter();
 
   const form = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       name: "",
+      companyName: "",
       email: "",
       password: "",
     },
@@ -43,25 +49,10 @@ export default function SignupPage() {
           Create an account
         </CardTitle>
         <CardDescription>
-          Get started with AI-Recruit360 as a {role}
+          Get started with AI-Recruit360
         </CardDescription>
       </CardHeader>
       <CardContent className="px-0">
-        {/* Role Toggle */}
-        <div className="grid grid-cols-2 gap-2 p-1 bg-muted rounded-lg mb-6">
-          <button
-            onClick={() => setRole("recruiter")}
-            className={`text-sm font-medium py-2 rounded-md transition-all ${role === "recruiter" ? "bg-white shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            Recruiter
-          </button>
-          <button
-            onClick={() => setRole("candidate")}
-            className={`text-sm font-medium py-2 rounded-md transition-all ${role === "candidate" ? "bg-white shadow text-foreground" : "text-muted-foreground hover:text-foreground"}`}
-          >
-            Candidate
-          </button>
-        </div>
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -80,12 +71,25 @@ export default function SignupPage() {
             />
             <FormField
               control={form.control}
+              name="companyName"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Company Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Acme Corp" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email</FormLabel>
+                  <FormLabel>Company Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@example.com" {...field} />
+                    <Input placeholder="name@company.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

@@ -18,10 +18,6 @@ export default function AuthLayout({
           <blockquote className="text-2xl font-medium leading-relaxed">
             "We cut our hiring time by 70% and eliminated fraudulent candidates completely. The Truthfulness Score is a game changer."
           </blockquote>
-          <div>
-            <div className="font-semibold">Sarah Jenkins</div>
-            <div className="text-blue-200 text-sm">Head of Talent, InnoTech</div>
-          </div>
         </div>
 
         <div className="text-sm text-blue-300">

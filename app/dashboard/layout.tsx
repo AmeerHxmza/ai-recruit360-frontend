@@ -55,9 +55,11 @@ export default function DashboardLayout({
         ))}
       </div>
       <div className="p-4 border-t border-slate-800">
-        <Button variant="ghost" className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-400/10 gap-2">
-          <LogOut className="w-4 h-4" />
-          Sign Out
+        <Button variant="ghost" className="w-full justify-start text-red-400 hover:text-red-300 hover:bg-red-400/10 gap-2" asChild>
+          <Link href="/auth/login">
+            <LogOut className="w-4 h-4" />
+            Sign Out
+          </Link>
         </Button>
       </div>
     </div>
@@ -96,8 +98,9 @@ export default function DashboardLayout({
             </Button>
             <div className="flex items-center gap-3 border-l pl-4 ml-2">
               <div className="text-right hidden sm:block">
-                <div className="text-sm font-medium">Alex Morgan</div>
-                <div className="text-xs text-muted-foreground">Senior Recruiter</div>
+                <div className="text-sm font-bold">Alex Morgan</div>
+                <div className="text-xs text-muted-foreground font-medium">Acme Corp</div>
+                <div className="text-[10px] text-muted-foreground uppercase tracking-wider">Senior Recruiter</div>
               </div>
               <Avatar>
                 <AvatarImage src="https://github.com/shadcn.png" />
