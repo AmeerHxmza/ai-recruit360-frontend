@@ -16,13 +16,6 @@ export function TruthfulnessScore({
   className,
   ...props
 }: TruthfulnessScoreProps) {
-  // Determine color based on score
-  const getColor = (value: number) => {
-    if (value >= 80) return "bg-green-500 text-green-700 border-green-200";
-    if (value >= 50) return "bg-yellow-500 text-yellow-700 border-yellow-200";
-    return "bg-red-500 text-red-700 border-red-200";
-  };
-
   const getProgressColor = (value: number) => {
     if (value >= 80) return "bg-green-500";
     if (value >= 50) return "bg-yellow-500";
@@ -54,9 +47,9 @@ export function TruthfulnessScore({
           </span>
         </div>
       )}
-      <div className={cn("w-full bg-slate-100 rounded-full overflow-hidden", getHeight())}>
+      <div className={cn("w-full bg-slate-100 rounded-full overflow-hidden ring-1 ring-black/5", getHeight())}>
         <div
-          className={cn("h-full transition-all duration-500 ease-out", getProgressColor(score))}
+          className={cn("h-full transition-all duration-700 ease-out", getProgressColor(score))}
           style={{ width: `${score}%` }}
         />
       </div>

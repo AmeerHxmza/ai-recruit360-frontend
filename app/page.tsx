@@ -3,15 +3,14 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { TruthfulnessScore } from "@/components/truthfulness-score";
+import { LucideIcon } from "lucide-react";
 import {
   CheckCircle2,
   XCircle,
   Bot,
   ShieldCheck,
-  Zap,
   BarChart3,
   ArrowRight,
-  Menu,
   Check
 } from "lucide-react";
 
@@ -19,10 +18,10 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-background flex flex-col font-sans">
       {/* Navbar */}
-      <header className="fixed top-0 w-full z-50 bg-white/80 dark:bg-black/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+      <header className="fixed top-0 z-50 w-full border-b border-border bg-white/85 backdrop-blur-md">
+        <div className="page-shell flex h-16 items-center justify-between">
+          <div className="group flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary transition-transform duration-300 group-hover:rotate-6">
               <Bot className="text-primary-foreground w-5 h-5" />
             </div>
             <span className="text-xl font-bold tracking-tight text-primary">AI-Recruit360</span>
@@ -32,11 +31,11 @@ export default function Home() {
             <Link href="#demo" className="hover:text-primary transition-colors">How it works</Link>
             <Link href="#pricing" className="hover:text-primary transition-colors">Pricing</Link>
           </nav>
-          <div className="flex items-center gap-4">
-            <Link href="/auth/login" className="hidden sm:block text-sm font-medium hover:underline">
+          <div className="flex items-center gap-3">
+            <Link href="/auth/login" className="hidden text-sm font-medium transition-colors hover:text-primary sm:block">
               Login
             </Link>
-            <Button variant="accent" asChild>
+            <Button variant="accent" className="h-9 px-4 text-sm sm:h-10 sm:px-5" asChild>
               <Link href="/auth/signup">Start Free Trial</Link>
             </Button>
           </div>
@@ -45,18 +44,18 @@ export default function Home() {
 
       <main className="flex-1 pt-16">
         {/* Hero Section */}
-        <section className="relative pt-20 pb-32 overflow-hidden bg-gradient-to-b from-blue-50/50 to-white dark:from-blue-950/20 dark:to-background">
-          <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
-            <div className="max-w-2xl">
-              <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight text-foreground mb-6 leading-tight">
+        <section className="relative overflow-hidden bg-gradient-to-b from-primary/10 to-background pb-20 pt-14 sm:pt-20 lg:pb-28">
+          <div className="page-shell grid items-center gap-12 lg:grid-cols-2">
+            <div className="max-w-2xl animate-in fade-in slide-in-from-left-4 duration-700">
+              <h1 className="mb-6 text-4xl font-extrabold leading-tight tracking-tight text-foreground sm:text-5xl md:text-6xl">
                 Hire with <span className="text-primary">Confidence</span>.<br />
                 Verify with <span className="text-accent">AI</span>.
               </h1>
-              <p className="text-xl text-muted-foreground mb-8 text-balance">
-                The world's first autonomous recruitment platform that validates candidate truthfulness in real-time using advanced voice analysis and code verification.
+              <p className="mb-8 text-lg text-muted-foreground sm:text-xl text-balance">
+                The world&apos;s first autonomous recruitment platform that validates candidate truthfulness in real-time using advanced voice analysis and code verification.
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" variant="accent" className="h-12 px-8 text-lg shadow-xl shadow-orange-500/20" asChild>
+                <Button size="lg" variant="accent" className="h-12 px-8 text-lg shadow-xl shadow-accent/20" asChild>
                   <Link href="/auth/signup">
                     Start Hiring Now
                     <ArrowRight className="ml-2 w-5 h-5" />
@@ -68,7 +67,7 @@ export default function Home() {
                   </Link>
                 </Button>
               </div>
-              <div className="mt-8 flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="mt-8 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex -space-x-2">
                   {[1, 2, 3, 4].map((i) => (
                     <div key={i} className="w-8 h-8 rounded-full border-2 border-background bg-slate-200" />
@@ -79,8 +78,8 @@ export default function Home() {
             </div>
 
             {/* Glassmorphic Dashboard Mockup */}
-            <div className="relative mx-auto w-full max-w-lg lg:max-w-none">
-              <div className="relative rounded-xl bg-white/40 dark:bg-black/40 backdrop-blur-xl border border-white/20 shadow-2xl p-4 md:p-6 transform rotate-1 hover:rotate-0 transition-transform duration-500">
+            <div className="relative mx-auto w-full max-w-lg animate-in fade-in slide-in-from-right-4 duration-700 lg:max-w-none">
+              <div className="relative rotate-1 rounded-xl border border-white/20 bg-white/40 p-4 shadow-2xl backdrop-blur-xl transition-all duration-500 hover:-translate-y-1 hover:rotate-0 md:p-6 dark:bg-black/40">
                 {/* Mockup Header */}
                 <div className="flex items-center justify-between mb-6 pb-4 border-b border-border/50">
                   <div className="flex items-center gap-3">
@@ -94,7 +93,7 @@ export default function Home() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between p-3 rounded-lg bg-white/60 dark:bg-slate-900/60 border border-border shadow-sm">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold">JD</div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 font-bold text-primary">JD</div>
                       <div>
                         <div className="font-semibold text-sm">John Doe</div>
                         <div className="text-xs text-muted-foreground">Senior React Dev</div>
@@ -104,7 +103,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-lg bg-white/60 dark:bg-slate-900/60 border border-border shadow-sm">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-orange-100 flex items-center justify-center text-orange-700 font-bold">AS</div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent/15 font-bold text-accent">AS</div>
                       <div>
                         <div className="font-semibold text-sm">Alice Smith</div>
                         <div className="text-xs text-muted-foreground">Backend Engineer</div>
@@ -114,7 +113,7 @@ export default function Home() {
                   </div>
                   <div className="flex items-center justify-between p-3 rounded-lg bg-white/60 dark:bg-slate-900/60 border border-border shadow-sm opacity-60">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold">MK</div>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-emerald-100 font-bold text-emerald-700">MK</div>
                       <div>
                         <div className="font-semibold text-sm">Mike K.</div>
                         <div className="text-xs text-muted-foreground">Product Manager</div>
@@ -125,7 +124,7 @@ export default function Home() {
                 </div>
               </div>
               {/* Floating Badge */}
-              <div className="absolute -bottom-6 -left-6 bg-white dark:bg-slate-800 p-4 rounded-xl shadow-xl border border-border animate-bounce duration-[3000ms]">
+              <div className="absolute -bottom-4 left-2 rounded-xl border border-border bg-white p-4 shadow-xl transition-transform duration-300 hover:-translate-y-1 sm:-left-6">
                 <div className="flex items-center gap-2 mb-1">
                   <ShieldCheck className="text-green-500 w-5 h-5" />
                   <span className="font-bold text-sm">Verified</span>
@@ -137,15 +136,15 @@ export default function Home() {
         </section>
 
         {/* Problem/Solution Section */}
-        <section className="py-24 bg-white dark:bg-black">
-          <div className="container mx-auto px-4">
+        <section className="section-spacing bg-white">
+          <div className="page-shell">
             <div className="text-center max-w-3xl mx-auto mb-16">
               <h2 className="text-3xl font-bold tracking-tight mb-4">Why Traditional Hiring is Broken</h2>
               <p className="text-muted-foreground text-lg">Resumes are often exaggerated. Screening takes hundreds of hours. We fix both.</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-8">
-              <Card className="border-red-100 bg-red-50/50 dark:bg-red-950/20 dark:border-red-900/50">
+              <Card className="hover-lift border-red-100 bg-red-50/50 dark:bg-red-950/20 dark:border-red-900/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
                     <XCircle className="w-6 h-6" />
@@ -159,7 +158,7 @@ export default function Home() {
                 </CardContent>
               </Card>
 
-              <Card className="border-emerald-100 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-900/50">
+              <Card className="hover-lift border-emerald-100 bg-emerald-50/50 dark:bg-emerald-950/20 dark:border-emerald-900/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
                     <CheckCircle2 className="w-6 h-6" />
@@ -177,8 +176,8 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-24 bg-muted/30">
-          <div className="container mx-auto px-4">
+        <section id="features" className="section-spacing bg-muted/30">
+          <div className="page-shell">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold tracking-tight mb-4">Everything you need to hire top talent</h2>
             </div>
@@ -204,42 +203,42 @@ export default function Home() {
         </section>
 
         {/* Truthfulness Score Demo */}
-        <section id="demo" className="py-24 bg-gradient-to-br from-[#002366] to-[#001540] text-white">
-          <div className="container mx-auto px-4 text-center">
+        <section id="demo" className="section-spacing bg-gradient-to-br from-[#0b1735] to-[#10224f] text-white">
+          <div className="page-shell text-center">
             <Badge className="mb-6 bg-white/10 text-white hover:bg-white/20 border-0">Live Demo</Badge>
             <h2 className="text-4xl font-bold mb-6">See the Truthfulness Score™ in Action</h2>
-            <p className="text-blue-200 max-w-2xl mx-auto mb-12 text-lg">
+            <p className="mx-auto mb-12 max-w-2xl text-lg text-blue-100/90">
               Our proprietary engine analyzes thousands of data points including voice tone, response consistency, and code veracity to generate a single trust metric.
             </p>
 
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
               <div className="p-6 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
                 <div className="text-left mb-4">
-                  <span className="text-sm text-blue-300">Candidate A</span>
+                  <span className="text-sm text-primary/80">Candidate A</span>
                   <h3 className="font-bold text-lg">Honest & Direct</h3>
                 </div>
                 <TruthfulnessScore score={95} className="mb-4" />
-                <p className="text-sm text-blue-200 text-left">Consistent answers, natural coding flow, matches resume claims.</p>
+                <p className="text-left text-sm text-blue-100/90">Consistent answers, natural coding flow, matches resume claims.</p>
               </div>
 
               <div className="p-6 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm">
                 <div className="text-left mb-4">
-                  <span className="text-sm text-blue-300">Candidate B</span>
+                  <span className="text-sm text-primary/80">Candidate B</span>
                   <h3 className="font-bold text-lg">Slight Exaggeration</h3>
                 </div>
                 <TruthfulnessScore score={65} className="mb-4" />
-                <p className="text-sm text-blue-200 text-left">Minor inconsistencies in project timeline, valid technical skills.</p>
+                <p className="text-left text-sm text-blue-100/90">Minor inconsistencies in project timeline, valid technical skills.</p>
               </div>
 
               <div className="p-6 rounded-xl bg-white/5 border border-white/10 backdrop-blur-sm relative overflow-hidden">
                 <div className="absolute inset-0 bg-red-500/10 z-0"></div>
                 <div className="relative z-10">
                   <div className="text-left mb-4">
-                    <span className="text-sm text-blue-300">Candidate C</span>
+                    <span className="text-sm text-primary/80">Candidate C</span>
                     <h3 className="font-bold text-lg">Fraud Detected</h3>
                   </div>
                   <TruthfulnessScore score={30} className="mb-4" />
-                  <p className="text-sm text-blue-200 text-left">Detected copy-paste code, voice mismatch, inconsistent history.</p>
+                  <p className="text-left text-sm text-blue-100/90">Detected copy-paste code, voice mismatch, inconsistent history.</p>
                 </div>
               </div>
             </div>
@@ -247,8 +246,8 @@ export default function Home() {
         </section>
 
         {/* Pricing Section */}
-        <section id="pricing" className="py-24 bg-muted/30">
-          <div className="container mx-auto px-4">
+        <section id="pricing" className="section-spacing bg-muted/30">
+          <div className="page-shell">
             <div className="text-center mb-16">
               <h2 className="text-3xl font-bold tracking-tight mb-4">Simple, transparent pricing</h2>
               <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
@@ -258,7 +257,7 @@ export default function Home() {
 
             <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
               {/* Starter Tier */}
-              <Card className="border shadow-sm flex flex-col pt-6">
+              <Card className="hover-lift border shadow-sm flex flex-col pt-6">
                 <CardHeader>
                   <CardTitle className="text-2xl">Starter</CardTitle>
                   <CardDescription>For small teams scaling up.</CardDescription>
@@ -295,7 +294,7 @@ export default function Home() {
               </Card>
 
               {/* Pro Tier (Highlighted) */}
-              <Card className="border-primary shadow-xl flex flex-col relative scale-105 z-10">
+              <Card className="hover-lift relative z-10 flex flex-col border-primary shadow-xl md:scale-105">
                 <div className="absolute top-0 inset-x-0 -mt-3 flex justify-center">
                   <Badge variant="default" className="px-3 py-1 bg-accent text-accent-foreground hover:bg-accent/90">Most Popular</Badge>
                 </div>
@@ -339,7 +338,7 @@ export default function Home() {
               </Card>
 
               {/* Enterprise Tier */}
-              <Card className="border shadow-sm flex flex-col pt-6">
+              <Card className="hover-lift border shadow-sm flex flex-col pt-6">
                 <CardHeader>
                   <CardTitle className="text-2xl">Enterprise</CardTitle>
                   <CardDescription>Custom volume pricing.</CardDescription>
@@ -378,8 +377,8 @@ export default function Home() {
         </section>
 
         {/* CTA Section */}
-        <section className="py-24 bg-white dark:bg-black text-center">
-          <div className="container mx-auto px-4">
+        <section className="section-spacing bg-background text-center">
+          <div className="page-shell">
             <h2 className="text-4xl font-bold mb-6">Ready to transform your hiring?</h2>
             <p className="text-muted-foreground text-xl mb-8 max-w-2xl mx-auto">
               Join 5,000+ recruiters using AI-Recruit360 to save time and hire better talent.
@@ -393,8 +392,8 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="bg-muted py-12 border-t border-border">
-        <div className="container mx-auto px-4 grid md:grid-cols-4 gap-8">
+      <footer className="border-t border-border bg-muted py-12">
+        <div className="page-shell grid gap-8 md:grid-cols-4">
           <div className="col-span-2">
             <div className="flex items-center gap-2 mb-4">
               <div className="w-6 h-6 rounded bg-primary flex items-center justify-center">
@@ -429,11 +428,11 @@ export default function Home() {
   );
 }
 
-function FeatureCard({ icon: Icon, title, description }: { icon: any, title: string, description: string }) {
+function FeatureCard({ icon: Icon, title, description }: { icon: LucideIcon; title: string; description: string }) {
   return (
-    <Card className="border-0 shadow-lg bg-white dark:bg-black">
+    <Card className="hover-lift group border-0 shadow-lg bg-white dark:bg-black">
       <CardHeader>
-        <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center mb-4">
+        <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 transition-transform duration-300 group-hover:scale-110">
           <Icon className="w-6 h-6 text-primary" />
         </div>
         <CardTitle className="text-xl">{title}</CardTitle>

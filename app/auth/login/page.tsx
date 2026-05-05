@@ -1,17 +1,17 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Badge } from "@/components/ui/badge";
+import { FeedbackToast } from "@/components/ui/feedback-toast";
+import { Loader2 } from "lucide-react";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
@@ -20,6 +20,8 @@ const loginSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ message: string; tone: "success" | "error" | "info" } | null>(null);
 
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -31,14 +33,18 @@ export default function LoginPage() {
 
   function onSubmit(values: z.infer<typeof loginSchema>) {
     console.log(values);
-    // Simulate login
-    router.push("/dashboard");
+    setIsSubmitting(true);
+    setToast({ message: "Signing you in...", tone: "info" });
+    setTimeout(() => {
+      setToast({ message: "Signed in successfully.", tone: "success" });
+      router.push("/dashboard");
+    }, 750);
   }
 
   return (
     <Card className="border-none shadow-none bg-transparent">
       <CardHeader className="space-y-1 px-0">
-        <CardTitle className="text-2xl font-bold tracking-tight">
+        <CardTitle className="text-2xl font-bold tracking-tight sm:text-3xl">
           Welcome back
         </CardTitle>
         <CardDescription>
@@ -46,6 +52,7 @@ export default function LoginPage() {
         </CardDescription>
       </CardHeader>
       <CardContent className="px-0">
+        {toast ? <FeedbackToast className="mb-4" message={toast.message} tone={toast.tone} onClose={() => setToast(null)} /> : null}
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -75,7 +82,8 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" variant="accent">
+            <Button type="submit" className="w-full" variant="accent" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               Sign In
             </Button>
           </form>
@@ -83,7 +91,7 @@ export default function LoginPage() {
       </CardContent>
       <CardFooter className="px-0 flex flex-col gap-4">
         <div className="text-center text-sm text-muted-foreground w-full">
-          Don't have an account?{" "}
+          Don&apos;t have an account?{" "}
           <Link href="/auth/signup" className="underline underline-offset-4 hover:text-primary">
             Sign up
           </Link>
