@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,7 +61,7 @@ const CANDIDATES: Candidate[] = [
 ];
 const CANDIDATE_ROLES = Array.from(new Set(CANDIDATES.map((c) => c.role)));
 
-export default function CandidatesPage() {
+function CandidatesPageContent() {
   const searchParams = useSearchParams();
   const jobParam = searchParams.get("job");
   const [selectedJob, setSelectedJob] = useState<string>(
@@ -194,6 +194,14 @@ export default function CandidatesPage() {
         </div>
       ) : null}
     </div>
+  );
+}
+
+export default function CandidatesPage() {
+  return (
+    <Suspense fallback={<div className="space-y-4"><Skeleton className="h-10 w-full" /><Skeleton className="h-10 w-full" /><Skeleton className="h-72 w-full" /></div>}>
+      <CandidatesPageContent />
+    </Suspense>
   );
 }
 
