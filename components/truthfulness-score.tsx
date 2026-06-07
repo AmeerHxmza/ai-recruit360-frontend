@@ -16,63 +16,50 @@ export function TruthfulnessScore({
   className,
   ...props
 }: TruthfulnessScoreProps) {
-  const getDimensions = () => {
-    switch (size) {
-      case "sm": return { width: 36, height: 36, strokeWidth: 3 };
-      case "lg": return { width: 64, height: 64, strokeWidth: 5 };
-      default: return { width: 48, height: 48, strokeWidth: 4 };
-    }
+  // Determine color based on score thresholds
+  const getColorClass = () => {
+    if (score >= 80) return "bg-success";
+    if (score >= 60) return "bg-primary";
+    if (score >= 40) return "bg-warning";
+    return "bg-destructive";
   };
 
-  const { width, height, strokeWidth } = getDimensions();
-  const radius = (width - strokeWidth) / 2;
-  const circumference = radius * 2 * Math.PI;
-  const strokeDashoffset = circumference - (score / 100) * circumference;
+  const getTextColorClass = () => {
+    if (score >= 80) return "text-success";
+    if (score >= 60) return "text-primary";
+    if (score >= 40) return "text-warning";
+    return "text-destructive";
+  };
+
+  const getHeightClass = () => {
+    if (size === "sm") return "h-1";
+    if (size === "lg") return "h-2.5";
+    return "h-1.5";
+  };
 
   return (
-    <div className={cn("flex items-center gap-3", className)} {...props}>
-      <div className="relative" style={{ width, height }}>
-        <svg
-          className="transform -rotate-90"
-          width={width}
-          height={height}
-        >
-          <circle
-            cx={width / 2}
-            cy={height / 2}
-            r={radius}
-            strokeWidth={strokeWidth}
-            className="stroke-gray-100"
-            fill="none"
-          />
-          <circle
-            cx={width / 2}
-            cy={height / 2}
-            r={radius}
-            strokeWidth={strokeWidth}
-            className="stroke-brand-cyan"
-            fill="none"
-            strokeLinecap="round"
-            style={{
-              strokeDasharray: circumference,
-              strokeDashoffset,
-            }}
-          />
-        </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className={cn(
-            "font-bold text-brand-navy tracking-tight",
-            size === "sm" ? "text-[10px]" : size === "lg" ? "text-base" : "text-xs"
-          )}>
-            {score}
+    <div className={cn("flex flex-col gap-1.5 w-full min-w-[80px]", className)} {...props}>
+      <div className="flex items-center justify-between gap-2">
+        {showLabel && (
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+            Verification
           </span>
-        </div>
-      </div>
-      {showLabel && (
-        <span className="text-xs font-medium text-brand-slate">
-          Match Score
+        )}
+        <span className={cn(
+          "font-bold tracking-tight",
+          getTextColorClass(),
+          size === "sm" ? "text-xs" : size === "lg" ? "text-base" : "text-sm"
+        )}>
+          {score}%
         </span>
-      )}
+      </div>
+      <div className={cn("w-full bg-border rounded-full overflow-hidden", getHeightClass())}>
+        <div
+          className={cn("h-full transition-all duration-500 rounded-full", getColorClass())}
+          style={{ width: `${score}%` }}
+        />
+      </div>
     </div>
   );
 }
+

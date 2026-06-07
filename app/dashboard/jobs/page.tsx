@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/lib/supabase";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -43,15 +44,17 @@ import {
   Loader2
 } from "lucide-react";
 
+const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000";
+
 type Job = {
-  id: number;
+  id: string;
   title: string;
   department: string;
+  description?: string;
   candidates: number;
-  status: "Active" | "Closed";
+  status: "Active" | "Closed" | "Draft";
   githubRequired: boolean;
   knockoutEnabled: boolean;
-  candidateRole: string;
 };
 
 export default function JobsPage() {
@@ -61,49 +64,47 @@ export default function JobsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; tone: "success" | "error" | "info" } | null>(null);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
-  const [jobs, setJobs] = useState<Job[]>([
-    {
-      id: 1,
-      title: "Senior React Developer",
-      department: "Engineering",
-      candidates: 45,
-      status: "Active",
-      githubRequired: true,
-      knockoutEnabled: true,
-      candidateRole: "Frontend Dev",
-    },
-    {
-      id: 2,
-      title: "Product Designer",
-      department: "Design",
-      candidates: 12,
-      status: "Active",
-      githubRequired: false,
-      knockoutEnabled: true,
-      candidateRole: "Product Manager",
-    },
-    {
-      id: 3,
-      title: "DevOps Engineer",
-      department: "Engineering",
-      candidates: 28,
-      status: "Closed",
-      githubRequired: true,
-      knockoutEnabled: false,
-      candidateRole: "DevOps",
-    },
-  ]);
+  const [jobs, setJobs] = useState<Job[]>([]);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 450);
-    return () => clearTimeout(timer);
-  }, []);
+  const loadJobs = async () => {
+    setIsLoading(true);
+    const { data: jobsData } = await supabase
+      .from("jobs")
+      .select("id, title, department, description, status, github_required, knockout_enabled")
+      .order("created_at", { ascending: false });
 
-  useEffect(() => {
-    if (!isLoading) return;
-    const timer = setTimeout(() => setIsLoading(false), 280);
-    return () => clearTimeout(timer);
-  }, [isLoading]);
+    if (jobsData) {
+      // Get candidate counts per job
+      const { data: countData } = await supabase
+        .from("candidates")
+        .select("job_id");
+
+      const countMap: Record<string, number> = {};
+      (countData || []).forEach((c: any) => {
+        countMap[c.job_id] = (countMap[c.job_id] || 0) + 1;
+      });
+
+      setJobs(jobsData.map((j: any) => ({
+        id: j.id,
+        title: j.title,
+        department: j.department || "",
+        description: j.description || "",
+        candidates: countMap[j.id] || 0,
+        status: j.status,
+        githubRequired: j.github_required,
+        knockoutEnabled: j.knockout_enabled,
+      })));
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => { loadJobs(); }, []);
+
+  const handleDeleteJob = async (jobId: string) => {
+    setJobs((prev) => prev.filter((j) => j.id !== jobId));
+    await supabase.from("jobs").delete().eq("id", jobId);
+    setToast({ message: "Job deleted.", tone: "success" });
+  };
 
   const filteredJobs = useMemo(() => {
     return jobs.filter((job) => {
@@ -124,7 +125,7 @@ export default function JobsPage() {
             Manage your open positions and requirements.
           </p>
         </div>
-        <CreateJobDialog onDone={(message, tone) => setToast({ message, tone })} />
+        <CreateJobDialog onDone={(message, tone) => setToast({ message, tone })} onCreated={loadJobs} />
       </div>
 
       {/* Filters */}
@@ -179,17 +180,14 @@ export default function JobsPage() {
                   <JobActionsMenu
                     job={job}
                     onCopyLink={(jobId) => {
-                      navigator.clipboard.writeText(`https://ai-recruit360.com/apply/${jobId}`);
+                      navigator.clipboard.writeText(`${window.location.origin}/apply/${jobId}`);
                       setToast({ message: "Job link copied to clipboard.", tone: "success" });
                     }}
                     onUpdate={(jobId) => {
                       const selected = jobs.find((item) => item.id === jobId) ?? null;
                       setEditingJob(selected);
                     }}
-                    onDelete={(jobId) => {
-                      setJobs((prev) => prev.filter((item) => item.id !== jobId));
-                      setToast({ message: "Job deleted successfully.", tone: "success" });
-                    }}
+                    onDelete={handleDeleteJob}
                   />
                 </div>
               </div>
@@ -198,7 +196,7 @@ export default function JobsPage() {
               <div className="flex items-center gap-4 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-1">
                   <Users className="w-4 h-4" />
-                  <span>{job.candidates} Active</span>
+                  <span>{job.candidates} Candidate{job.candidates !== 1 ? "s" : ""}</span>
                 </div>
                 <Badge variant={job.status === "Active" ? "default" : "secondary"}>
                   {job.status}
@@ -207,7 +205,7 @@ export default function JobsPage() {
 
               <div className="space-y-2">
                 {job.githubRequired && (
-                  <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Github className="w-3 h-3" />
                     GitHub Verification Required
                   </div>
@@ -225,7 +223,7 @@ export default function JobsPage() {
                 variant="ghost"
                 size="sm"
                 className="w-full text-primary hover:text-primary hover:bg-primary/10"
-                onClick={() => router.push(`/dashboard/candidates?job=${encodeURIComponent(job.candidateRole)}`)}
+                onClick={() => router.push(`/dashboard/candidates?job=${encodeURIComponent(job.id)}`)}
               >
                 View Candidates
               </Button>
@@ -243,7 +241,14 @@ export default function JobsPage() {
         key={editingJob?.id ?? "no-edit"}
         job={editingJob}
         onClose={() => setEditingJob(null)}
-        onSave={(updatedJob) => {
+        onSave={async (updatedJob) => {
+          await supabase.from("jobs").update({
+            title: updatedJob.title,
+            department: updatedJob.department,
+            status: updatedJob.status,
+            github_required: updatedJob.githubRequired,
+            knockout_enabled: updatedJob.knockoutEnabled,
+          }).eq("id", updatedJob.id);
           setJobs((prev) => prev.map((item) => (item.id === updatedJob.id ? updatedJob : item)));
           setEditingJob(null);
           setToast({ message: "Job updated successfully.", tone: "success" });
@@ -253,15 +258,43 @@ export default function JobsPage() {
   );
 }
 
-function CreateJobDialog({ onDone }: { onDone: (message: string, tone: "success" | "error" | "info") => void }) {
+function CreateJobDialog({
+  onDone,
+  onCreated,
+}: {
+  onDone: (message: string, tone: "success" | "error" | "info") => void;
+  onCreated?: () => void;
+}) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [title, setTitle] = useState("");
+  const [department, setDepartment] = useState("");
+  const [description, setDescription] = useState("");
+  const [githubRequired, setGithubRequired] = useState(false);
+  const [knockoutEnabled, setKnockoutEnabled] = useState(false);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
+    if (!title.trim() || !department.trim()) {
+      onDone("Title and department are required.", "error");
+      return;
+    }
     setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
+    const { error } = await supabase.from("jobs").insert({
+      title: title.trim(),
+      department: department.trim(),
+      description: description.trim(),
+      github_required: githubRequired,
+      knockout_enabled: knockoutEnabled,
+      status: "Active",
+    });
+    setIsSubmitting(false);
+    if (error) {
+      onDone("Failed to create job. Please try again.", "error");
+    } else {
+      setTitle(""); setDepartment(""); setDescription("");
+      setGithubRequired(false); setKnockoutEnabled(false);
       onDone("Job created successfully.", "success");
-    }, 800);
+      onCreated?.();
+    }
   };
 
   return (
@@ -321,7 +354,7 @@ function ShareJobDialog({
   onDone,
 }: {
   jobTitle: string;
-  jobId: number;
+  jobId: string;
   onDone: (message: string, tone: "success" | "error" | "info") => void;
 }) {
   const jobLink =
@@ -399,9 +432,9 @@ function JobActionsMenu({
   onCopyLink,
 }: {
   job: Job;
-  onDelete: (jobId: number) => void;
-  onUpdate: (jobId: number) => void;
-  onCopyLink: (jobId: number) => void;
+  onDelete: (jobId: string) => void;
+  onUpdate: (jobId: string) => void;
+  onCopyLink: (jobId: string) => void;
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

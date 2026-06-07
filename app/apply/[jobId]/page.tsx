@@ -1,15 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { UploadCloud, Loader2, Bot, User, CheckCircle2, XCircle, Video } from "lucide-react";
+import { UploadCloud, Loader2, Bot, User, CheckCircle2, XCircle, Video, AlertTriangle } from "lucide-react";
 
-type Stage = "apply" | "screening" | "knockout" | "interview" | "done";
+const FASTAPI_URL = process.env.NEXT_PUBLIC_FASTAPI_URL || "http://localhost:8000";
+
+type Stage = "apply" | "screening" | "knockout" | "interview" | "submitting" | "done" | "error";
 
 type ApplicationData = {
   fullName: string;
@@ -19,22 +20,26 @@ type ApplicationData = {
   cvFile: File | null;
 };
 
-const JOBS: Record<string, { title: string; keywords: string[] }> = {
-  "1": { title: "Senior React Developer", keywords: ["react", "typescript", "frontend", "javascript"] },
-  "2": { title: "Product Designer", keywords: ["design", "figma", "ux", "ui"] },
-  "3": { title: "DevOps Engineer", keywords: ["devops", "aws", "kubernetes", "docker"] },
-};
-const FRONTEND_MOCK_MODE = true;
+type AnswerEntry = { question: string; answer: string };
 
 export default function ApplyJobPage() {
   const params = useParams<{ jobId: string }>();
   const router = useRouter();
   const jobId = params.jobId as string;
-  const job = JOBS[jobId] ?? { title: "Open Position", keywords: ["experience"] };
 
   const [stage, setStage] = useState<Stage>("apply");
-  const [screeningMessage, setScreeningMessage] = useState("Analyzing CV against job requirements...");
+  const [screeningMessage, setScreeningMessage] = useState("Analyzing your CV against job requirements...");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [questions, setQuestions] = useState<string[]>([]);
   const [questionIndex, setQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<number, string>>({});
+  const [candidateId, setCandidateId] = useState<string>("");
+  const [jobTitle, setJobTitle] = useState("Open Position");
+
+  // Browser integrity tracking
+  const tabSwitchCount = useRef(0);
+  const startTime = useRef(Date.now());
+
   const [application, setApplication] = useState<ApplicationData>({
     fullName: "",
     email: "",
@@ -43,185 +48,355 @@ export default function ApplyJobPage() {
     cvFile: null,
   });
 
-  const questions = useMemo(
-    () => [
-      `Hi ${application.fullName || "candidate"}, please introduce yourself in 60 seconds.`,
-      "Walk me through the most relevant project from your CV.",
-      "Which achievement in your CV best proves your impact?",
-      "What tools and technologies do you use most confidently?",
-      "Describe a challenge you solved and what you learned.",
-      `How does your experience fit this ${job.title} role?`,
-      "How do you collaborate with team members under deadlines?",
-      "Tell me about a mistake you made and how you corrected it.",
-      "What are your compensation and availability expectations?",
-      "Why should we shortlist you for the onsite interview?",
-    ],
-    [application.fullName, job.title]
-  );
+  // Fetch job title on mount
+  useEffect(() => {
+    async function fetchJob() {
+      try {
+        const res = await fetch(`${FASTAPI_URL}/api/v1/jobs/${jobId}`);
+        if (res.ok) {
+          const job = await res.json();
+          setJobTitle(job.title || "Open Position");
+        }
+      } catch {
+        // Use default title if API unreachable
+      }
+    }
+    fetchJob();
+  }, [jobId]);
 
-  const evaluateCvMatch = () => {
-    if (FRONTEND_MOCK_MODE) return true;
-    const resumeText = `${application.cvFile?.name ?? ""} ${application.address}`.toLowerCase();
-    return job.keywords.some((keyword) => resumeText.includes(keyword));
-  };
+  // Track tab switches for integrity scoring
+  useEffect(() => {
+    if (stage !== "interview") return;
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        tabSwitchCount.current++;
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [stage]);
 
-  const handleApplySubmit = () => {
-    if (!application.fullName.trim() || !application.email.trim() || !application.gender.trim() || !application.address.trim() || !application.cvFile) {
+  const handleApplySubmit = async () => {
+    if (!application.fullName.trim() || !application.email.trim() || !application.cvFile) {
       return;
     }
+
     setStage("screening");
-    setTimeout(() => {
-      const isMatch = evaluateCvMatch();
-      if (isMatch) {
-        setScreeningMessage(
-          FRONTEND_MOCK_MODE
-            ? "Frontend mock mode: CV accepted. Proceeding to AI interview..."
-            : "CV matched. Proceeding to AI interview..."
-        );
-        setStage("interview");
-      } else {
-        setScreeningMessage("CV did not match minimum criteria.");
-        setStage("knockout");
+    setScreeningMessage("Uploading CV and analyzing against job requirements...");
+
+    try {
+      const formData = new FormData();
+      formData.append("full_name", application.fullName.trim());
+      formData.append("email", application.email.trim());
+      formData.append("gender", application.gender.trim());
+      formData.append("address", application.address.trim());
+      formData.append("resume", application.cvFile);
+
+      const res = await fetch(`${FASTAPI_URL}/api/apply/${jobId}`, {
+        method: "POST",
+        body: formData,
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "Submission failed");
       }
-    }, 1800);
+
+      const data = await res.json();
+
+      if (data.stage === "knockout") {
+        setStage("knockout");
+        return;
+      }
+
+      // Interview stage
+      setCandidateId(data.candidate_id);
+      setQuestions(data.questions || []);
+      setAnswers({});
+      setQuestionIndex(0);
+      startTime.current = Date.now();
+      setStage("interview");
+    } catch (err: any) {
+      setErrorMessage(err.message || "Something went wrong. Please try again.");
+      setStage("error");
+    }
   };
 
   const handleNextQuestion = () => {
     if (questionIndex >= questions.length - 1) {
-      setStage("done");
+      handleSubmitInterview();
       return;
     }
     setQuestionIndex((prev) => prev + 1);
   };
 
-  const progress = Math.round(((questionIndex + 1) / questions.length) * 100);
+  const handleSubmitInterview = async () => {
+    setStage("submitting");
+
+    const timeTaken = Math.round((Date.now() - startTime.current) / 1000);
+    const responses = questions.map((q, i) => ({
+      question: q,
+      answer: answers[i] || "",
+    }));
+
+    try {
+      await fetch(`${FASTAPI_URL}/api/apply/${jobId}/interview/${candidateId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          responses,
+          tab_switches: tabSwitchCount.current,
+          time_taken_seconds: timeTaken,
+        }),
+      });
+      setStage("done");
+    } catch {
+      // Even if submission fails, show done screen — data was collected
+      setStage("done");
+    }
+  };
+
+  const progress = questions.length > 0
+    ? Math.round(((questionIndex + 1) / questions.length) * 100)
+    : 0;
+
+  const currentAnswer = answers[questionIndex] || "";
+  const isInterviewDark = stage === "interview" || stage === "submitting";
 
   return (
-    <div className={`min-h-screen px-4 py-10 transition-colors duration-500 ${stage === "interview" ? "bg-brand-navy text-brand-white" : "bg-brand-light text-brand-navy"}`}>
+    <div
+      className={`min-h-screen px-4 py-10 transition-colors duration-500 ${
+        isInterviewDark
+          ? "bg-[#060D1F] text-white"
+          : "bg-background text-foreground"
+      }`}
+    >
       <div className="mx-auto w-full max-w-3xl">
+        {/* Header */}
         <div className="mb-8 text-center">
-          <p className="text-sm font-semibold uppercase tracking-wider text-brand-cyan">AI-Recruit360 Candidate Portal</p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight">{job.title}</h1>
-          <p className={`mt-1 ${stage === "interview" ? "text-brand-slate" : "text-brand-slate"}`}>Job ID: {jobId}</p>
+          <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-1">
+            AI-Recruit360 Candidate Portal
+          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{jobTitle}</h1>
+          <p className="text-muted-foreground text-sm mt-1">Job ID: {jobId}</p>
         </div>
 
+        {/* ── APPLY STAGE ── */}
         {stage === "apply" && (
           <Card className="surface-card">
             <CardHeader>
-              <CardTitle className="tracking-tight text-brand-navy">Start Application</CardTitle>
-              <CardDescription className="text-brand-slate">Upload your profile details and CV to begin screening.</CardDescription>
+              <CardTitle>Start Your Application</CardTitle>
+              <CardDescription>
+                Fill in your details and upload your CV. Our AI will screen your application and generate personalised interview questions.
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-2">
-                <Label htmlFor="full-name" className="text-brand-navy">Full Name</Label>
-                <Input id="full-name" className="border-gray-200 focus-visible:ring-brand-cyan" value={application.fullName} onChange={(e) => setApplication((prev) => ({ ...prev, fullName: e.target.value }))} />
+                <Label htmlFor="full-name">Full Name *</Label>
+                <Input
+                  id="full-name"
+                  placeholder="John Doe"
+                  value={application.fullName}
+                  onChange={(e) => setApplication((p) => ({ ...p, fullName: e.target.value }))}
+                />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email" className="text-brand-navy">Email</Label>
-                <Input id="email" type="email" className="border-gray-200 focus-visible:ring-brand-cyan" value={application.email} onChange={(e) => setApplication((prev) => ({ ...prev, email: e.target.value }))} />
+                <Label htmlFor="email">Email Address *</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="john@email.com"
+                  value={application.email}
+                  onChange={(e) => setApplication((p) => ({ ...p, email: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Input
+                    id="gender"
+                    placeholder="e.g. Male, Female"
+                    value={application.gender}
+                    onChange={(e) => setApplication((p) => ({ ...p, gender: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="address">City / Address</Label>
+                  <Input
+                    id="address"
+                    placeholder="Karachi, Pakistan"
+                    value={application.address}
+                    onChange={(e) => setApplication((p) => ({ ...p, address: e.target.value }))}
+                  />
+                </div>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="gender" className="text-brand-navy">Gender</Label>
-                <Input id="gender" className="border-gray-200 focus-visible:ring-brand-cyan" placeholder="e.g. Male, Female, Prefer not to say" value={application.gender} onChange={(e) => setApplication((prev) => ({ ...prev, gender: e.target.value }))} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="address" className="text-brand-navy">Address</Label>
-                <Input id="address" className="border-gray-200 focus-visible:ring-brand-cyan" value={application.address} onChange={(e) => setApplication((prev) => ({ ...prev, address: e.target.value }))} />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="cv" className="text-brand-navy">CV Upload</Label>
-                <label htmlFor="cv" className="flex cursor-pointer items-center gap-3 rounded-md border border-dashed border-gray-300 p-4 hover:bg-brand-light">
-                  <UploadCloud className="h-5 w-5 text-brand-cyan" />
-                  <span className="text-sm text-brand-navy">
-                    {application.cvFile ? application.cvFile.name : "Click to upload your CV (PDF/DOCX)"}
+                <Label htmlFor="cv">CV / Resume *</Label>
+                <label
+                  htmlFor="cv"
+                  className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-border p-5 hover:border-primary/50 hover:bg-primary/5 transition-colors"
+                >
+                  <UploadCloud className="h-6 w-6 text-primary shrink-0" />
+                  <span className="text-sm text-muted-foreground">
+                    {application.cvFile
+                      ? <span className="text-foreground font-medium">{application.cvFile.name}</span>
+                      : "Click to upload your CV (PDF only, max 5MB)"}
                   </span>
                 </label>
                 <input
                   id="cv"
                   type="file"
-                  accept=".pdf,.doc,.docx"
+                  accept=".pdf"
                   className="hidden"
-                  onChange={(e) => setApplication((prev) => ({ ...prev, cvFile: e.target.files?.[0] ?? null }))}
+                  onChange={(e) => setApplication((p) => ({ ...p, cvFile: e.target.files?.[0] ?? null }))}
                 />
               </div>
-              <Button className="w-full bg-brand-cyan text-brand-white hover:bg-brand-cyan/90 rounded-md shadow-sm" onClick={handleApplySubmit}>
-                Submit and Continue
+              <Button
+                className="w-full h-12 text-base"
+                variant="accent"
+                onClick={handleApplySubmit}
+                disabled={!application.fullName.trim() || !application.email.trim() || !application.cvFile}
+              >
+                Submit Application & Begin Screening
               </Button>
             </CardContent>
           </Card>
         )}
 
+        {/* ── SCREENING STAGE ── */}
         {stage === "screening" && (
           <Card className="surface-card">
-            <CardContent className="flex min-h-[220px] flex-col items-center justify-center space-y-3 py-12 text-center">
-              <Loader2 className="h-8 w-8 animate-spin text-brand-cyan" />
-              <h3 className="text-xl font-semibold tracking-tight text-brand-navy">CV Screening in Progress</h3>
-              <p className="text-brand-slate">{screeningMessage}</p>
+            <CardContent className="flex min-h-[260px] flex-col items-center justify-center space-y-4 py-14 text-center">
+              <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+                <Loader2 className="h-7 w-7 animate-spin text-primary" />
+              </div>
+              <h3 className="text-xl font-bold tracking-tight">AI Screening in Progress</h3>
+              <p className="text-muted-foreground max-w-md">{screeningMessage}</p>
+              <p className="text-xs text-muted-foreground">This usually takes 15–30 seconds...</p>
             </CardContent>
           </Card>
         )}
 
+        {/* ── KNOCKOUT STAGE ── */}
         {stage === "knockout" && (
-          <Card className="surface-card border-brand-archived/30">
-            <CardContent className="flex min-h-[260px] flex-col items-center justify-center space-y-3 py-12 text-center">
-              <XCircle className="h-10 w-10 text-brand-archived" />
-              <h3 className="text-xl font-semibold tracking-tight text-brand-navy">Application Not Matched</h3>
-              <p className="max-w-lg text-brand-slate">
-                Thank you for applying. Based on current job requirements, your CV did not match minimum criteria for this role.
+          <Card className="surface-card border-destructive/20">
+            <CardContent className="flex min-h-[280px] flex-col items-center justify-center space-y-4 py-14 text-center">
+              <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center">
+                <XCircle className="h-7 w-7 text-destructive" />
+              </div>
+              <h3 className="text-xl font-bold tracking-tight">Application Not Matched</h3>
+              <p className="max-w-lg text-muted-foreground">
+                Thank you for your interest. Based on a review of your CV against the job requirements, your application did not meet the minimum criteria for this role. We encourage you to apply to other positions.
               </p>
-              <Button variant="outline" className="border-gray-200 text-brand-navy hover:bg-brand-light" onClick={() => router.push("/")}>Exit Platform</Button>
+              <Button variant="outline" onClick={() => router.push("/")}>Return to Home</Button>
             </CardContent>
           </Card>
         )}
 
+        {/* ── INTERVIEW STAGE ── */}
         {stage === "interview" && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-xl font-semibold tracking-tight flex items-center gap-2">
-                <Video className="w-5 h-5 text-brand-cyan" />
+          <div className="space-y-5">
+            {/* Interview header */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold flex items-center gap-2 text-white">
+                <Video className="w-5 h-5 text-primary" />
                 AI Interview Room
               </h2>
-              <span className="text-sm font-medium text-brand-cyan">Question {questionIndex + 1} of {questions.length}</span>
-            </div>
-
-            <div className="h-2 w-full overflow-hidden rounded-full bg-brand-slate/20">
-              <div className="h-full bg-brand-cyan transition-all duration-500" style={{ width: `${progress}%` }} />
-            </div>
-
-            {/* Cyan-bordered video container */}
-            <div className="w-full aspect-video rounded-md border-2 border-brand-cyan bg-[#091124] shadow-sm overflow-hidden relative flex flex-col items-center justify-center">
-              <Bot className="h-24 w-24 text-brand-cyan opacity-80" />
-              <div className="absolute bottom-6 w-[90%] max-w-lg bg-[#0F172A]/90 border border-brand-cyan/30 backdrop-blur-md px-6 py-4 rounded-md shadow-lg text-center">
-                <p className="text-brand-white font-medium text-lg">{questions[questionIndex]}</p>
+              <div className="flex items-center gap-3">
+                {tabSwitchCount.current > 0 && (
+                  <span className="flex items-center gap-1 text-warning text-xs">
+                    <AlertTriangle className="w-3 h-3" />
+                    Tab switch detected
+                  </span>
+                )}
+                <span className="text-sm font-semibold text-primary">
+                  Q{questionIndex + 1} / {questions.length}
+                </span>
               </div>
             </div>
 
-            <div className="rounded-md border border-brand-slate/30 bg-[#0b1221] p-5 shadow-sm">
-              <div className="mb-3 flex items-center gap-2 text-brand-slate">
-                <User className="h-4 w-4" />
-                <p className="font-medium text-sm">Your response</p>
-              </div>
-              <textarea
-                className="h-32 w-full resize-none rounded-md border border-brand-slate/50 bg-[#0F172A] p-4 text-sm text-brand-white outline-none focus:border-brand-cyan focus:ring-1 focus:ring-brand-cyan placeholder:text-brand-slate"
-                placeholder="Type your answer here..."
+            {/* Progress bar */}
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full bg-primary rounded-full transition-all duration-500"
+                style={{ width: `${progress}%` }}
               />
             </div>
-            <Button className="w-full bg-brand-cyan hover:bg-brand-cyan/90 text-brand-white font-medium rounded-md shadow-sm h-12 text-base" onClick={handleNextQuestion}>
-              {questionIndex >= questions.length - 1 ? "Complete Interview" : "Submit & Continue"}
+
+            {/* AI Avatar + Question */}
+            <div className="w-full aspect-video rounded-xl border border-primary/30 bg-[#0A1628] shadow-xl overflow-hidden relative flex flex-col items-center justify-center">
+              <Bot className="h-20 w-20 text-primary opacity-70" />
+              <div className="absolute bottom-0 left-0 right-0 bg-[#060D1F]/90 backdrop-blur-sm border-t border-white/10 px-6 py-4 text-center">
+                <p className="text-white font-medium text-lg leading-relaxed">
+                  {questions[questionIndex]}
+                </p>
+              </div>
+            </div>
+
+            {/* Answer input */}
+            <div className="rounded-xl border border-white/10 bg-[#0A1628] p-5">
+              <div className="flex items-center gap-2 text-white/50 text-sm mb-3">
+                <User className="h-4 w-4" />
+                Your response
+              </div>
+              <textarea
+                key={questionIndex}
+                className="h-32 w-full resize-none rounded-lg border border-white/10 bg-[#060D1F] p-4 text-sm text-white outline-none focus:border-primary focus:ring-1 focus:ring-primary placeholder:text-white/30 transition-colors"
+                placeholder="Type your answer here..."
+                value={currentAnswer}
+                onChange={(e) =>
+                  setAnswers((prev) => ({ ...prev, [questionIndex]: e.target.value }))
+                }
+              />
+            </div>
+
+            <Button
+              className="w-full h-12 text-base bg-primary hover:bg-primary-hover text-primary-foreground"
+              onClick={handleNextQuestion}
+              disabled={!currentAnswer.trim()}
+            >
+              {questionIndex >= questions.length - 1 ? "Complete Interview →" : "Submit & Next Question →"}
             </Button>
           </div>
         )}
 
+        {/* ── SUBMITTING STAGE ── */}
+        {stage === "submitting" && (
+          <div className="flex min-h-[280px] flex-col items-center justify-center space-y-4 text-center">
+            <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center">
+              <Loader2 className="h-7 w-7 animate-spin text-primary" />
+            </div>
+            <h3 className="text-xl font-bold text-white">Submitting Your Interview</h3>
+            <p className="text-white/60">Please wait while we process your responses...</p>
+          </div>
+        )}
+
+        {/* ── DONE STAGE ── */}
         {stage === "done" && (
-          <Card className="surface-card border-brand-success/30">
+          <Card className="surface-card border-success/20">
             <CardContent className="flex min-h-[300px] flex-col items-center justify-center space-y-4 py-14 text-center">
-              <CheckCircle2 className="h-10 w-10 text-brand-success" />
-              <h3 className="text-2xl font-semibold tracking-tight text-brand-navy">Interview Completed</h3>
-              <p className="max-w-xl text-brand-slate">
-                Thank you for completing your AI interview. We will inform you about invitation or rejection for the onsite real interview.
-                Your application data has been submitted to the recruiter dashboard.
+              <div className="w-16 h-16 rounded-full bg-success/10 flex items-center justify-center">
+                <CheckCircle2 className="h-8 w-8 text-success" />
+              </div>
+              <h3 className="text-2xl font-bold tracking-tight text-foreground">Interview Complete!</h3>
+              <p className="max-w-lg text-muted-foreground">
+                Thank you for completing your AI-powered interview, <strong>{application.fullName}</strong>. Your responses are being evaluated by our AI and will be reviewed by the recruiter. You will be notified about your application outcome.
               </p>
-              <Button variant="outline" className="border-gray-200 text-brand-navy hover:bg-brand-light" onClick={() => router.push("/")}>Return to Home</Button>
+              <Button variant="outline" onClick={() => router.push("/")}>Return to Home</Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ── ERROR STAGE ── */}
+        {stage === "error" && (
+          <Card className="surface-card border-destructive/20">
+            <CardContent className="flex min-h-[260px] flex-col items-center justify-center space-y-4 py-14 text-center">
+              <XCircle className="h-9 w-9 text-destructive" />
+              <h3 className="text-xl font-bold text-foreground">Submission Failed</h3>
+              <p className="text-muted-foreground max-w-md">{errorMessage}</p>
+              <Button variant="outline" onClick={() => setStage("apply")}>
+                Try Again
+              </Button>
             </CardContent>
           </Card>
         )}

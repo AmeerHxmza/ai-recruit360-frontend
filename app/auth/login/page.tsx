@@ -8,37 +8,66 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { FeedbackToast } from "@/components/ui/feedback-toast";
 import { Loader2 } from "lucide-react";
+import { supabase } from "@/lib/supabase";
 
 const loginSchema = z.object({
   email: z.string().email({ message: "Invalid email address" }),
   password: z.string().min(6, { message: "Password must be at least 6 characters" }),
 });
 
+type LoginForm = z.infer<typeof loginSchema>;
+
 export default function LoginPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState<{ message: string; tone: "success" | "error" | "info" } | null>(null);
+  const [toast, setToast] = useState<{
+    message: string;
+    tone: "success" | "error" | "info";
+  } | null>(null);
 
-  const form = useForm<z.infer<typeof loginSchema>>({
+  const form = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   });
 
-  function onSubmit(values: z.infer<typeof loginSchema>) {
-    console.log(values);
+  async function onSubmit(values: LoginForm) {
     setIsSubmitting(true);
-    setToast({ message: "Signing you in...", tone: "info" });
-    setTimeout(() => {
-      setToast({ message: "Signed in successfully.", tone: "success" });
-      router.push("/dashboard");
-    }, 750);
+    setToast(null);
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email: values.email.trim(),
+      password: values.password,
+    });
+
+    if (error) {
+      setToast({
+        message: error.message || "Invalid email or password. Please try again.",
+        tone: "error",
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
+    setToast({ message: "Signed in successfully!", tone: "success" });
+    setTimeout(() => router.push("/dashboard"), 600);
   }
 
   return (
@@ -47,13 +76,17 @@ export default function LoginPage() {
         <CardTitle className="text-2xl font-bold tracking-tight sm:text-3xl">
           Welcome back
         </CardTitle>
-        <CardDescription>
-          Enter your company email to sign in to your account
-        </CardDescription>
+        <CardDescription>Enter your company email to sign in.</CardDescription>
       </CardHeader>
       <CardContent className="px-0">
-        {toast ? <FeedbackToast className="mb-4" message={toast.message} tone={toast.tone} onClose={() => setToast(null)} /> : null}
-
+        {toast && (
+          <FeedbackToast
+            className="mb-4"
+            message={toast.message}
+            tone={toast.tone}
+            onClose={() => setToast(null)}
+          />
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -63,7 +96,7 @@ export default function LoginPage() {
                 <FormItem>
                   <FormLabel>Company Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="name@company.com" {...field} />
+                    <Input placeholder="name@company.com" type="email" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -82,8 +115,13 @@ export default function LoginPage() {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" variant="accent" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            <Button
+              type="submit"
+              className="w-full"
+              variant="accent"
+              disabled={isSubmitting}
+            >
+              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Sign In
             </Button>
           </form>
@@ -92,7 +130,10 @@ export default function LoginPage() {
       <CardFooter className="px-0 flex flex-col gap-4">
         <div className="text-center text-sm text-muted-foreground w-full">
           Don&apos;t have an account?{" "}
-          <Link href="/auth/signup" className="underline underline-offset-4 hover:text-primary">
+          <Link
+            href="/auth/signup"
+            className="underline underline-offset-4 hover:text-primary font-medium"
+          >
             Sign up
           </Link>
         </div>

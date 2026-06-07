@@ -40,14 +40,30 @@ export default function SignupPage() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof signupSchema>) {
-    console.log(values);
+  async function onSubmit(values: z.infer<typeof signupSchema>) {
     setIsSubmitting(true);
     setToast({ message: "Creating your workspace...", tone: "info" });
-    setTimeout(() => {
-      setToast({ message: "Account created successfully.", tone: "success" });
-      router.push("/dashboard");
-    }, 900);
+
+    const { supabase } = await import("@/lib/supabase");
+    const { error } = await supabase.auth.signUp({
+      email: values.email.trim(),
+      password: values.password,
+      options: {
+        data: {
+          full_name: values.name.trim(),
+          company_name: values.companyName.trim(),
+        },
+      },
+    });
+
+    if (error) {
+      setToast({ message: error.message || "Failed to create account.", tone: "error" });
+      setIsSubmitting(false);
+      return;
+    }
+
+    setToast({ message: "Account created! Redirecting...", tone: "success" });
+    setTimeout(() => router.push("/dashboard"), 700);
   }
 
   return (

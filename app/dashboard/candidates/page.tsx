@@ -41,6 +41,9 @@ import {
   Loader2
 } from "lucide-react";
 
+import { UploadCandidateModal } from "@/components/upload-candidate-modal";
+import { supabase } from "@/lib/supabase";
+
 type Candidate = {
   id: number;
   name: string;
@@ -52,57 +55,79 @@ type Candidate = {
   flagged: boolean;
 };
 
-const CANDIDATES: Candidate[] = [
-  { id: 1, name: "Liam Johnson", role: "Frontend Dev", status: "Interviewed", score: 92, applied: "2h ago", github: "liamj", flagged: false },
-  { id: 2, name: "Emma Wilson", role: "Frontend Dev", status: "Verified", score: 85, applied: "5h ago", github: "emmaw", flagged: false },
-  { id: 3, name: "Noah Brown", role: "Backend Dev", status: "Applied", score: 45, applied: "1d ago", github: "noahb", flagged: true },
-  { id: 4, name: "Olivia Davis", role: "Product Manager", status: "Interviewed", score: 78, applied: "1d ago", github: "divyad", flagged: false },
-  { id: 5, name: "William Miller", role: "DevOps", status: "Interviewed", score: 24, applied: "2d ago", github: "williamm", flagged: true },
-];
-const CANDIDATE_ROLES = Array.from(new Set(CANDIDATES.map((c) => c.role)));
-
 function CandidatesPageContent() {
   const searchParams = useSearchParams();
   const jobParam = searchParams.get("job");
-  const [selectedJob, setSelectedJob] = useState<string>(
-    jobParam && CANDIDATE_ROLES.includes(jobParam) ? jobParam : "all"
-  );
+  
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
+  const [roles, setRoles] = useState<string[]>([]);
+  const [selectedJob, setSelectedJob] = useState<string>(jobParam || "all");
+  
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [toast, setToast] = useState<{ message: string; tone: "success" | "error" | "info" } | null>(null);
 
-  const uniqueJobs = CANDIDATE_ROLES;
-
   useEffect(() => {
-    const timer = setTimeout(() => setIsLoading(false), 450);
-    return () => clearTimeout(timer);
+    async function fetchData() {
+      setIsLoading(true);
+      const { data, error } = await supabase
+        .from('candidates')
+        .select(`
+          id,
+          name,
+          role_applied,
+          status,
+          created_at,
+          candidate_scores (
+            hiring_confidence_score,
+            truthfulness_score
+          )
+        `);
+
+      if (data) {
+        const mapped: Candidate[] = data.map((c: any) => {
+          const scores = Array.isArray(c.candidate_scores) ? c.candidate_scores[0] : c.candidate_scores;
+          return {
+            id: c.id,
+            name: c.name || "Unknown Candidate",
+            role: c.role_applied || "General",
+            status: c.status || "Pending",
+            score: scores?.truthfulness_score || scores?.hiring_confidence_score || 0,
+            applied: new Date(c.created_at).toLocaleDateString(),
+            github: "N/A", // Map if available in DB later
+            flagged: (scores?.truthfulness_score && scores.truthfulness_score < 50) ? true : false,
+          };
+        });
+        setCandidates(mapped);
+        
+        const uniqueRoles = Array.from(new Set(mapped.map((c) => c.role)));
+        setRoles(uniqueRoles);
+      }
+      setIsLoading(false);
+    }
+    fetchData();
   }, []);
-
-  useEffect(() => {
-    if (!isLoading) return;
-    const timer = setTimeout(() => setIsLoading(false), 280);
-    return () => clearTimeout(timer);
-  }, [isLoading]);
 
   const filteredAndSortedCandidates = useMemo(
     () =>
-      CANDIDATES
+      candidates
         .filter((c) => (selectedJob === "all" ? true : c.role === selectedJob))
         .filter((c) => `${c.name} ${c.role} ${c.github}`.toLowerCase().includes(search.toLowerCase().trim()))
         .sort((a, b) => b.score - a.score),
-    [search, selectedJob]
+    [search, selectedJob, candidates]
   );
 
   return (
     <div className="space-y-6 lg:space-y-8">
       {toast ? <FeedbackToast message={toast.message} tone={toast.tone} onClose={() => setToast(null)} /> : null}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold tracking-tight sm:text-3xl">Candidates</h2>
           <p className="text-brand-slate">
             View and manage candidate applications.
           </p>
         </div>
+        <UploadCandidateModal />
       </div>
 
       {/* Filters */}
@@ -132,7 +157,7 @@ function CandidatesPageContent() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Jobs</SelectItem>
-            {uniqueJobs.map((job) => (
+            {roles.map((job) => (
               <SelectItem key={job} value={job}>
                 {job}
               </SelectItem>
